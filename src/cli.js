@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { intro, outro, select, isCancel, cancel, note, spinner } from '@clack/prompts';
+import pc from 'picocolors';
 import process from 'node:process';
 import fs from 'node:fs/promises';
 import { playSound } from './play.js';
@@ -93,7 +94,7 @@ async function interactiveSetup() {
       const enabled = Boolean(soundId);
       return {
         value: eventName,
-        label: `${enabled ? '[x]' : '[ ]'} ${eventName}${soundId ? `  →  ${soundId}` : ''}`
+        label: `${eventName}${soundId ? `  ${pc.dim('→')}  ${pc.cyan(soundId)}` : ''}`
       };
     });
 
