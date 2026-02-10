@@ -28,29 +28,35 @@ function parseArg(flag) {
   return process.argv[idx + 1] ?? null;
 }
 
+const SOUND_GROUPS = [
+  { value: 'common', label: 'Common' },
+  { value: 'game', label: 'Game' },
+  { value: 'ring', label: 'Ring' }
+];
+
 /**
- * Build flat select options with group headers from grouped sounds.
- * @param {Record<string, string[]>} grouped
- * @param {Record<string, string>} labels - custom labels from order.json
- * @returns {Array<{ value: string; label: string; disabled?: boolean }>}
+ * Get display string for a sound: "Group / label" for grouped sounds, "label" for ring.
+ * @param {string} soundId
+ * @param {Record<string, string>} labels
+ * @returns {string}
  */
-function buildGroupedSoundOptions(grouped, labels) {
-  const options = [];
-  const groups = [
-    ['Common', 'common'],
-    ['Game', 'game'],
-    ['Ring', 'ring']
-  ];
-  for (const [groupLabel, key] of groups) {
-    const ids = grouped[key];
-    if (!ids?.length) continue;
-    options.push({ value: `__group_${key}__`, label: pc.bold(groupLabel), disabled: true });
-    for (const id of ids) {
-      const displayName = labels[id] ?? (id.includes('/') ? id.split('/')[1] : id);
-      options.push({ value: id, label: `  ${displayName}` });
-    }
-  }
-  return options;
+function formatSoundDisplay(soundId, labels) {
+  const displayName = labels[soundId] ?? (soundId.includes('/') ? soundId.split('/')[1] : soundId);
+  const group = SOUND_GROUPS.find((g) => soundId.startsWith(g.value + '/') || (g.value === 'ring' && !soundId.includes('/')));
+  return group ? `${group.label} / ${displayName}` : displayName;
+}
+
+/**
+ * Build options for a single sound group.
+ * @param {string[]} ids
+ * @param {Record<string, string>} labels
+ * @returns {Array<{ value: string; label: string }>}
+ */
+function buildSoundOptionsForGroup(ids, labels) {
+  return ids.map((id) => {
+    const displayName = labels[id] ?? (id.includes('/') ? id.split('/')[1] : id);
+    return { value: id, label: displayName };
+  });
 }
 
 async function cmdPlay() {
@@ -118,10 +124,10 @@ async function interactiveSetup() {
   while (true) {
     const options = HOOK_EVENTS.map((eventName) => {
       const soundId = mappings[eventName];
-      const enabled = Boolean(soundId);
+      const displayName = soundId ? formatSoundDisplay(soundId, soundLabels) : '';
       return {
         value: eventName,
-        label: `${eventName}${soundId ? `  ${pc.dim('→')}  ${pc.cyan(soundId)}` : ''}`
+        label: `${eventName}${soundId ? `  ${pc.dim('→')}  ${pc.cyan(displayName)}` : ''}`
       };
     });
 
@@ -173,17 +179,29 @@ async function interactiveSetup() {
       continue;
     }
 
-    const soundOptions = buildGroupedSoundOptions(soundsGrouped, soundLabels);
+    const categoryOptions = SOUND_GROUPS.filter((g) => (soundsGrouped[g.value]?.length ?? 0) > 0);
 
-    const soundId = await selectWithSoundPreview({
-      message: `Pick a sound for ${eventName} (↑/↓ preview)  ${pc.dim('(ESC to back)')}`,
-      options: soundOptions
-    });
+    while (true) {
+      const category = await select({
+        message: `Pick a category for ${eventName}  ${pc.dim('(ESC to back)')}`,
+        options: categoryOptions
+      });
 
-    if (isCancel(soundId)) continue;
-    if (typeof soundId === 'string' && soundId.startsWith('__group_')) continue;
+      if (isCancel(category)) break;
 
-    mappings[eventName] = soundId;
+      const ids = soundsGrouped[category] ?? [];
+      const soundOptions = buildSoundOptionsForGroup(ids, soundLabels);
+
+      const soundId = await selectWithSoundPreview({
+        message: `Pick a sound for ${eventName} (↑/↓ preview)  ${pc.dim('(ESC to back)')}`,
+        options: soundOptions
+      });
+
+      if (isCancel(soundId)) continue;
+
+      mappings[eventName] = soundId;
+      break;
+    }
   }
 }
 
