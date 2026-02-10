@@ -7,6 +7,7 @@ import fs from 'node:fs/promises';
 import { playSound } from './play.js';
 import { listSounds, listSoundsGrouped, ensureSoundsLoaded, invalidateSoundCache } from './sounds.js';
 import { generateTts } from './tts.js';
+import { importSound } from './import-sound.js';
 import { selectWithSoundPreview } from './select-with-preview.js';
 import {
   HOOK_EVENTS,
@@ -19,7 +20,7 @@ import {
 
 function usage(exitCode = 0) {
   process.stdout.write(`\
-claude-sound (macOS, Windows, Linux)\n\nUsage:\n  npx claude-sound@latest                Interactive hook sound setup\n  claude-sound                          Interactive hook sound setup\n\n  claude-sound play --sound <id>         Play a bundled sound\n  claude-sound list-sounds              List bundled sound ids\n  claude-sound list-events              List Claude hook event names\n\nOptions:\n  -h, --help                             Show help\n\nExamples:\n  npx claude-sound@latest\n  npx claude-sound@latest play --sound ring1\n`);
+claude-sound (macOS, Windows, Linux)\n\nUsage:\n  npx claude-sound@latest                Interactive hook sound setup\n  claude-sound                          Interactive hook sound setup\n\n  claude-sound play --sound <id>         Play a bundled sound\n  claude-sound import <path>            Import MP3/WAV into custom sounds\n  claude-sound list-sounds              List bundled sound ids\n  claude-sound list-events              List Claude hook event names\n\nOptions:\n  -h, --help                             Show help\n\nExamples:\n  npx claude-sound@latest\n  npx claude-sound@latest play --sound ring1\n  claude-sound import ./notification.mp3\n`);
   process.exit(exitCode);
 }
 
@@ -33,8 +34,9 @@ const SOUND_GROUPS = [
   { value: 'common', label: 'Common' },
   { value: 'game', label: 'Game' },
   { value: 'ring', label: 'Ring' },
-  { value: 'custom', label: 'Custom (TTS)' },
-  { value: '__create__', label: 'Create my own (text-to-speech)' }
+  { value: 'custom', label: 'Custom (TTS & imported)' },
+  { value: '__create__', label: 'Create my own (text-to-speech)' },
+  { value: '__import__', label: 'Import from file (MP3/WAV)' }
 ];
 
 /**
@@ -79,6 +81,22 @@ async function cmdPlay() {
     await playSound(soundId);
   } catch (err) {
     process.stderr.write(`Failed to play sound '${soundId}': ${err?.message || err}\n`);
+    process.exit(1);
+  }
+}
+
+async function cmdImport() {
+  const filePath = parseArg('--file') ?? process.argv[3];
+  if (!filePath) {
+    process.stderr.write('Missing path. Usage: claude-sound import <path-to-mp3-or-wav>\n');
+    process.exit(1);
+  }
+
+  try {
+    const { soundId } = await importSound(filePath);
+    process.stdout.write(`Imported: ${soundId}\n`);
+  } catch (err) {
+    process.stderr.write(`Import failed: ${err?.message || err}\n`);
     process.exit(1);
   }
 }
@@ -231,7 +249,10 @@ async function interactiveSetup() {
     }
 
     const categoryOptions = SOUND_GROUPS.filter(
-      (g) => g.value === '__create__' || (soundsGrouped[g.value]?.length ?? 0) > 0
+      (g) =>
+        g.value === '__create__' ||
+        g.value === '__import__' ||
+        (soundsGrouped[g.value]?.length ?? 0) > 0
     );
 
     while (true) {
@@ -241,6 +262,37 @@ async function interactiveSetup() {
       });
 
       if (isCancel(category)) break;
+
+      if (category === '__import__') {
+        const pathInput = await text({
+          message: 'Path to MP3 or WAV file',
+          placeholder: './my-sound.mp3 or /path/to/sound.wav',
+          validate: (v) => {
+            if (!v?.trim()) return 'Path cannot be empty';
+            return undefined;
+          }
+        });
+
+        if (isCancel(pathInput)) continue;
+
+        const s = spinner();
+        s.start('Importing...');
+        try {
+          const { soundId: newSoundId } = await importSound(pathInput);
+          invalidateSoundCache();
+          const refreshed = await listSoundsGrouped();
+          soundsGrouped.custom = refreshed.grouped.custom;
+          Object.assign(soundLabels, refreshed.labels);
+          s.stop('Done');
+          mappings[eventName] = newSoundId;
+          note(`Imported and selected: ${newSoundId}`, 'Imported');
+          break;
+        } catch (err) {
+          s.stop('Failed');
+          note(String(err?.message ?? err), 'Error');
+          continue;
+        }
+      }
 
       if (category === '__create__') {
         const langChoice = await select({
@@ -314,6 +366,11 @@ async function main() {
 
   if (cmd === 'play') {
     await cmdPlay();
+    return;
+  }
+
+  if (cmd === 'import') {
+    await cmdImport();
     return;
   }
 

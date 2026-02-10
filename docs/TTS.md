@@ -36,7 +36,7 @@ Generated sounds are saved to:
 ~/.claude-sound/sounds/
 ```
 
-Each file is named `<slug>-<hash>.mp3`, e.g. `hello-from-claude-1tcuau.mp3`. They appear under the **Custom (TTS)** category when picking sounds.
+Each file is named `<slug>-<hash>.mp3`, e.g. `hello-from-claude-1tcuau.mp3`. They appear under the **Custom (TTS & imported)** category when picking sounds. Imported MP3/WAV files from `claude-sound import` are stored in the same directory.
 
 ## Language
 

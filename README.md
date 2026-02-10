@@ -2,7 +2,7 @@
 
 Cross-platform CLI (macOS, Windows, Linux) that configures **Claude Code Hooks** to play **bundled sounds**.
 
-![claude-sound CLI](assets/images/cli-installation.png)
+![claude-sound CLI](assets/images/how-to-use.gif)
 
 - Setup UI: `npx claude-sound@latest`
 - Hook runner: `npx --yes claude-sound@latest play --event <Event> --sound <SoundId> --managed-by claude-sound`
@@ -19,7 +19,7 @@ You’ll be prompted to choose where to write settings:
 - Project (local): `.claude/settings.local.json`
 - Global: `~/.claude/settings.json`
 
-Then you can enable/disable events and choose a sound per event. Selecting a sound plays a quick preview. Choose **Create my own** to generate custom text-to-speech sounds.
+Then you can enable/disable events and choose a sound per event. Selecting a sound plays a quick preview. Choose **Create my own** to generate custom text-to-speech sounds, or **Import from file** to add your own MP3/WAV files.
 
 ## Commands
 
@@ -27,6 +27,7 @@ Then you can enable/disable events and choose a sound per event. Selecting a sou
 claude-sound list-events
 claude-sound list-sounds
 claude-sound play --sound ring1
+claude-sound import <path>   # Import MP3/WAV into ~/.claude-sound/sounds/
 ```
 
 ## What gets written
@@ -89,6 +90,16 @@ Add `assets/sounds/order.json` to control order and display names:
 When picking a sound, choose **Create my own** to generate custom sounds from text. Supports English (default) and Korean. Enter any phrase (e.g. "Claude is ready!" or "클로드가 준비됐어요!") and it will be turned into speech using Google Translate TTS (free, no API key). Requires network. Custom sounds are saved to `~/.claude-sound/sounds/`.
 
 See [docs/TTS.md](docs/TTS.md) for details.
+
+## Import from file
+
+When picking a sound, choose **Import from file** and enter a path to an MP3 or WAV file. It will be copied to `~/.claude-sound/sounds/` and appear under **Custom (TTS & imported)**. Or use the CLI:
+
+```bash
+claude-sound import ./my-notification.mp3
+```
+
+Supported formats: MP3, WAV. Max file size: 5MB.
 
 ## Platform support
 
