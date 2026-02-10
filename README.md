@@ -1,6 +1,6 @@
 # claude-sound
 
-macOS-only CLI that configures **Claude Code Hooks** to play **bundled sounds** using `afplay`.
+Cross-platform CLI (macOS, Windows, Linux) that configures **Claude Code Hooks** to play **bundled sounds**.
 
 ![claude-sound CLI](assets/images/cli-installation.png)
 
@@ -84,7 +84,14 @@ Add `assets/sounds/order.json` to control order and display names:
 - Use full IDs (e.g. `common/baemin`). Sounds not listed append at the end.
 - Use `{ "id": "...", "label": "Display Name" }` for custom labels; otherwise the filename is shown.
 
+## Platform support
+
+| Platform | Audio player | Notes |
+|----------|--------------|-------|
+| **macOS** | `afplay` | Built-in, no setup needed |
+| **Windows** | `ffplay`, `mpv`, `mpg123`, or PowerShell | Install [ffmpeg](https://ffmpeg.org/) (includes `ffplay`) or [mpv](https://mpv.io/) for best support. PowerShell (built-in) plays WAV only. |
+| **Linux** | `ffplay`, `mpv`, `mpg123`, `aplay`, etc. | Install ffmpeg or mpv for MP3 support. |
+
 ## Notes
 
-- macOS only (requires `afplay`).
 - Hooks run `npx` each time the event fires. It’s simple and works everywhere, but may be slower than a local install.

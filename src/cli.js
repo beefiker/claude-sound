@@ -18,7 +18,7 @@ import {
 
 function usage(exitCode = 0) {
   process.stdout.write(`\
-claude-sound (macOS)\n\nUsage:\n  npx claude-sound@latest                Interactive hook sound setup\n  claude-sound                          Interactive hook sound setup\n\n  claude-sound play --sound <id>         Play a bundled sound (uses afplay)\n  claude-sound list-sounds              List bundled sound ids\n  claude-sound list-events              List Claude hook event names\n\nOptions:\n  -h, --help                             Show help\n\nExamples:\n  npx claude-sound@latest\n  npx claude-sound@latest play --sound ring1\n`);
+claude-sound (macOS, Windows, Linux)\n\nUsage:\n  npx claude-sound@latest                Interactive hook sound setup\n  claude-sound                          Interactive hook sound setup\n\n  claude-sound play --sound <id>         Play a bundled sound\n  claude-sound list-sounds              List bundled sound ids\n  claude-sound list-events              List Claude hook event names\n\nOptions:\n  -h, --help                             Show help\n\nExamples:\n  npx claude-sound@latest\n  npx claude-sound@latest play --sound ring1\n`);
   process.exit(exitCode);
 }
 
