@@ -1,0 +1,42 @@
+[
+  {
+    "id": "ring1",
+    "file": "assets/sounds/ring1.wav"
+  },
+  {
+    "id": "ring2",
+    "file": "assets/sounds/ring2.wav"
+  },
+  {
+    "id": "ring3",
+    "file": "assets/sounds/ring3.wav"
+  },
+  {
+    "id": "ring4",
+    "file": "assets/sounds/ring4.wav"
+  },
+  {
+    "id": "ring5",
+    "file": "assets/sounds/ring5.wav"
+  },
+  {
+    "id": "ring6",
+    "file": "assets/sounds/ring6.wav"
+  },
+  {
+    "id": "ring7",
+    "file": "assets/sounds/ring7.wav"
+  },
+  {
+    "id": "ring8",
+    "file": "assets/sounds/ring8.wav"
+  },
+  {
+    "id": "ring9",
+    "file": "assets/sounds/ring9.wav"
+  },
+  {
+    "id": "ring10",
+    "file": "assets/sounds/ring10.wav"
+  }
+]
