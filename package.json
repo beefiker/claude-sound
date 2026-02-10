@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "description": "Configure Claude Code hooks to play bundled sounds on macOS (afplay).",
   "license": "MIT",
+  "homepage": "https://github.com/beefiker/claude-sound",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/beefiker/claude-sound.git"
+  },
+  "bugs": {
+    "url": "https://github.com/beefiker/claude-sound/issues"
   },
   "type": "module",
   "bin": {
@@ -23,6 +27,6 @@
     "prepack": "npm run generate:sounds"
   },
   "dependencies": {
-    "@clack/prompts": "^0.11.0"
+    "@clack/prompts": "^1.0.0"
   }
 }
