@@ -1,6 +1,6 @@
 {
   "name": "claude-sound",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Configure Claude Code hooks to play bundled sounds on macOS (afplay).",
   "license": "MIT",
   "homepage": "https://github.com/beefiker/claude-sound",
