@@ -2,6 +2,8 @@
 
 macOS-only CLI that configures **Claude Code Hooks** to play **bundled sounds** using `afplay`.
 
+![claude-sound CLI](assets/images/captured.png)
+
 - Setup UI: `npx claude-sound@latest`
 - Hook runner: `npx --yes claude-sound@latest play --event <Event> --sound <SoundId> --managed-by claude-sound`
 
