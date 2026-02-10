@@ -31,22 +31,23 @@ function parseArg(flag) {
 /**
  * Build flat select options with group headers from grouped sounds.
  * @param {Record<string, string[]>} grouped
+ * @param {Record<string, string>} labels - custom labels from order.json
  * @returns {Array<{ value: string; label: string; disabled?: boolean }>}
  */
-function buildGroupedSoundOptions(grouped) {
+function buildGroupedSoundOptions(grouped, labels) {
   const options = [];
   const groups = [
     ['Common', 'common'],
     ['Game', 'game'],
     ['Ring', 'ring']
   ];
-  for (const [label, key] of groups) {
+  for (const [groupLabel, key] of groups) {
     const ids = grouped[key];
     if (!ids?.length) continue;
-    options.push({ value: `__group_${key}__`, label: pc.bold(label), disabled: true });
+    options.push({ value: `__group_${key}__`, label: pc.bold(groupLabel), disabled: true });
     for (const id of ids) {
-      const shortName = id.includes('/') ? id.split('/')[1] : id;
-      options.push({ value: id, label: `  ${shortName}` });
+      const displayName = labels[id] ?? (id.includes('/') ? id.split('/')[1] : id);
+      options.push({ value: id, label: `  ${displayName}` });
     }
   }
   return options;
@@ -111,7 +112,7 @@ async function interactiveSetup() {
   /** @type {Record<string, string>} */
   let mappings = getExistingManagedMappings(settings);
 
-  const soundsGrouped = await listSoundsGrouped();
+  const { grouped: soundsGrouped, labels: soundLabels } = await listSoundsGrouped();
 
   // main loop
   while (true) {
@@ -172,7 +173,7 @@ async function interactiveSetup() {
       continue;
     }
 
-    const soundOptions = buildGroupedSoundOptions(soundsGrouped);
+    const soundOptions = buildGroupedSoundOptions(soundsGrouped, soundLabels);
 
     const soundId = await selectWithSoundPreview({
       message: `Pick a sound for ${eventName} (↑/↓ preview)  ${pc.dim('(ESC to back)')}`,

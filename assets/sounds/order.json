@@ -1,0 +1,42 @@
+{
+  "common": [
+    { "id": "common/pop", "label": "Pop" },
+    { "id": "common/baemin", "label": "Baemin Delivery" },
+    { "id": "common/kakaotalk", "label": "KakaoTalk" },
+    { "id": "common/error", "label": "Error" },
+    {
+      "id": "common/loading-lost-connection",
+      "label": "Loading Lost Connection"
+    }
+  ],
+  "game": [
+    { "id": "game/undertale-sans", "label": "Undertale Sans" },
+    { "id": "game/pokemon-battle", "label": "Pokemon Battle" },
+    {
+      "id": "game/starcraft-scv-good-to-go",
+      "label": "Starcraft SCV Good to Go"
+    },
+    {
+      "id": "game/starcraft-protoss-life-for-aiur",
+      "label": "Starcraft Protoss Life for Aiur"
+    },
+    {
+      "id": "game/starcraft-scv-reporting-for-duty",
+      "label": "Starcraft SCV Reporting for Duty"
+    },
+    { "id": "game/stardew-valley-fishing", "label": "Stardew Valley Fishing" },
+    {
+      "id": "game/stardew-valley-winter-ost",
+      "label": "Stardew Valley Winter OST"
+    }
+  ],
+  "ring": [
+    { "id": "ring1", "label": "Ring 1" },
+    { "id": "ring2", "label": "Ring 2" },
+    { "id": "ring3", "label": "Ring 3" },
+    { "id": "ring4", "label": "Ring 4" },
+    { "id": "ring5", "label": "Ring 5" },
+    { "id": "ring6", "label": "Ring 6" },
+    { "id": "ring7", "label": "Ring 7" }
+  ]
+}

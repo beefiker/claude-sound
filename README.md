@@ -65,6 +65,25 @@ Or manually delete any hook handlers whose command contains:
 --managed-by claude-sound
 ```
 
+## Custom sound order and labels
+
+Add `assets/sounds/order.json` to control order and display names:
+
+```json
+{
+  "common": [
+    { "id": "common/baemin", "label": "Baemin Delivery" },
+    "common/pop",
+    "common/kakaotalk"
+  ],
+  "game": ["game/undertale-sans", "game/pokemon-battle", ...],
+  "ring": ["ring1", "ring2", "ring3", "ring4", "ring5", "ring6", "ring7", "ring8", "ring9", "ring10"]
+}
+```
+
+- Use full IDs (e.g. `common/baemin`). Sounds not listed append at the end.
+- Use `{ "id": "...", "label": "Display Name" }` for custom labels; otherwise the filename is shown.
+
 ## Notes
 
 - macOS only (requires `afplay`).
