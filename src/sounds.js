@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { customSoundsDir } from './tts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,8 +18,16 @@ export function soundsDir() {
 let _soundPathCache = null;
 
 /**
+ * Clear the sound path cache. Call after adding custom sounds.
+ * @returns {void}
+ */
+export function invalidateSoundCache() {
+  _soundPathCache = null;
+}
+
+/**
  * Build a map of sound id -> absolute file path.
- * Discovers sounds from manifest.json and subdirs (common/, game/).
+ * Discovers sounds from manifest.json, subdirs (common/, game/), and custom TTS sounds.
  * @returns {Promise<SoundPathMap>}
  */
 async function buildSoundPathMap() {
@@ -55,6 +64,20 @@ async function buildSoundPathMap() {
     } catch {
       // dir missing or not readable
     }
+  }
+
+  // From custom TTS sounds (~/.claude-sound/sounds/)
+  const customDir = customSoundsDir();
+  try {
+    const entries = await fs.readdir(customDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.isFile() && (e.name.endsWith('.mp3') || e.name.endsWith('.wav'))) {
+        const id = `custom/${path.basename(e.name, path.extname(e.name))}`;
+        map[id] = path.join(customDir, e.name);
+      }
+    }
+  } catch {
+    // dir missing or not readable
   }
 
   _soundPathCache = map;
@@ -99,7 +122,7 @@ async function applyCustomOrder(grouped, labels, base) {
   }
   if (!order || typeof order !== 'object') return;
 
-  for (const key of ['common', 'game', 'ring']) {
+  for (const key of ['common', 'game', 'ring', 'custom']) {
     const ids = grouped[key];
     if (!ids?.length) continue;
     const ordered = order[key];
@@ -136,13 +159,15 @@ export async function listSoundsGrouped() {
   const grouped = /** @type {GroupedSounds} */ ({
     common: [],
     game: [],
-    ring: []
+    ring: [],
+    custom: []
   });
   const labels = /** @type {SoundLabels} */ ({});
 
   for (const id of Object.keys(map)) {
     if (id.startsWith('common/')) grouped.common.push(id);
     else if (id.startsWith('game/')) grouped.game.push(id);
+    else if (id.startsWith('custom/')) grouped.custom.push(id);
     else grouped.ring.push(id);
   }
 

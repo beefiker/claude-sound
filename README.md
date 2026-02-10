@@ -19,7 +19,7 @@ You’ll be prompted to choose where to write settings:
 - Project (local): `.claude/settings.local.json`
 - Global: `~/.claude/settings.json`
 
-Then you can enable/disable events and choose a sound per event. Selecting a sound plays a quick preview.
+Then you can enable/disable events and choose a sound per event. Selecting a sound plays a quick preview. Choose **Create my own** to generate custom text-to-speech sounds.
 
 ## Commands
 
@@ -83,6 +83,12 @@ Add `assets/sounds/order.json` to control order and display names:
 
 - Use full IDs (e.g. `common/baemin`). Sounds not listed append at the end.
 - Use `{ "id": "...", "label": "Display Name" }` for custom labels; otherwise the filename is shown.
+
+## Create my own (text-to-speech)
+
+When picking a sound, choose **Create my own** to generate custom sounds from text. Enter any phrase (e.g. "Claude is ready!") and it will be turned into speech using Google Translate TTS (free, no API key). Requires network. Custom sounds are saved to `~/.claude-sound/sounds/`.
+
+See [docs/TTS.md](docs/TTS.md) for details.
 
 ## Platform support
 

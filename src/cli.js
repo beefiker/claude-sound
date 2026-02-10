@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-import { intro, outro, select, isCancel, cancel, note, spinner } from '@clack/prompts';
+import { intro, outro, select, text, isCancel, cancel, note, spinner } from '@clack/prompts';
 import pc from 'picocolors';
 import process from 'node:process';
 import fs from 'node:fs/promises';
 import { playSound } from './play.js';
-import { listSounds, listSoundsGrouped, ensureSoundsLoaded } from './sounds.js';
+import { listSounds, listSoundsGrouped, ensureSoundsLoaded, invalidateSoundCache } from './sounds.js';
+import { generateTts } from './tts.js';
 import { selectWithSoundPreview } from './select-with-preview.js';
 import {
   HOOK_EVENTS,
@@ -31,7 +32,9 @@ function parseArg(flag) {
 const SOUND_GROUPS = [
   { value: 'common', label: 'Common' },
   { value: 'game', label: 'Game' },
-  { value: 'ring', label: 'Ring' }
+  { value: 'ring', label: 'Ring' },
+  { value: 'custom', label: 'Custom (TTS)' },
+  { value: '__create__', label: 'Create my own (text-to-speech)' }
 ];
 
 /**
@@ -42,7 +45,11 @@ const SOUND_GROUPS = [
  */
 function formatSoundDisplay(soundId, labels) {
   const displayName = labels[soundId] ?? (soundId.includes('/') ? soundId.split('/')[1] : soundId);
-  const group = SOUND_GROUPS.find((g) => soundId.startsWith(g.value + '/') || (g.value === 'ring' && !soundId.includes('/')));
+  const group = SOUND_GROUPS.find(
+    (g) =>
+      (g.value !== '__create__' && soundId.startsWith(g.value + '/')) ||
+      (g.value === 'ring' && !soundId.includes('/'))
+  );
   return group ? `${group.label} / ${displayName}` : displayName;
 }
 
@@ -179,7 +186,9 @@ async function interactiveSetup() {
       continue;
     }
 
-    const categoryOptions = SOUND_GROUPS.filter((g) => (soundsGrouped[g.value]?.length ?? 0) > 0);
+    const categoryOptions = SOUND_GROUPS.filter(
+      (g) => g.value === '__create__' || (soundsGrouped[g.value]?.length ?? 0) > 0
+    );
 
     while (true) {
       const category = await select({
@@ -188,6 +197,38 @@ async function interactiveSetup() {
       });
 
       if (isCancel(category)) break;
+
+      if (category === '__create__') {
+        const textInput = await text({
+          message: 'Enter text to speak (e.g. "Claude is ready!")',
+          placeholder: 'Claude is ready!',
+          validate: (v) => {
+            if (!v?.trim()) return 'Text cannot be empty';
+            if (v.length > 200) return 'Keep it under 200 characters';
+            return undefined;
+          }
+        });
+
+        if (isCancel(textInput)) continue;
+
+        const s = spinner();
+        s.start('Generating speech...');
+        try {
+          const { soundId: newSoundId } = await generateTts(textInput);
+          invalidateSoundCache();
+          const refreshed = await listSoundsGrouped();
+          soundsGrouped.custom = refreshed.grouped.custom;
+          soundLabels[newSoundId] = refreshed.labels[newSoundId] ?? textInput.trim().slice(0, 30);
+          s.stop('Done');
+          mappings[eventName] = newSoundId;
+          note(`Created and selected: ${newSoundId}`, 'Created');
+          break;
+        } catch (err) {
+          s.stop('Failed');
+          note(String(err?.message ?? err), 'Error');
+          continue;
+        }
+      }
 
       const ids = soundsGrouped[category] ?? [];
       const soundOptions = buildSoundOptionsForGroup(ids, soundLabels);
