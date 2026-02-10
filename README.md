@@ -86,7 +86,7 @@ Add `assets/sounds/order.json` to control order and display names:
 
 ## Create my own (text-to-speech)
 
-When picking a sound, choose **Create my own** to generate custom sounds from text. Enter any phrase (e.g. "Claude is ready!") and it will be turned into speech using Google Translate TTS (free, no API key). Requires network. Custom sounds are saved to `~/.claude-sound/sounds/`.
+When picking a sound, choose **Create my own** to generate custom sounds from text. Supports English (default) and Korean. Enter any phrase (e.g. "Claude is ready!" or "클로드가 준비됐어요!") and it will be turned into speech using Google Translate TTS (free, no API key). Requires network. Custom sounds are saved to `~/.claude-sound/sounds/`.
 
 See [docs/TTS.md](docs/TTS.md) for details.
 

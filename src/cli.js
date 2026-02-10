@@ -243,9 +243,19 @@ async function interactiveSetup() {
       if (isCancel(category)) break;
 
       if (category === '__create__') {
+        const langChoice = await select({
+          message: 'Language for speech',
+          options: [
+            { value: 'en', label: 'English (default)' },
+            { value: 'ko', label: 'Korean (한국어)' }
+          ]
+        });
+
+        if (isCancel(langChoice)) continue;
+
         const textInput = await text({
-          message: 'Enter text to speak (e.g. "Claude is ready!")',
-          placeholder: 'Claude is ready!',
+          message: `Enter text to speak${langChoice === 'ko' ? ' (e.g. "클로드가 준비됐어요!")' : ' (e.g. "Claude is ready!")'}`,
+          placeholder: langChoice === 'ko' ? '클로드가 준비됐어요!' : 'Claude is ready!',
           validate: (v) => {
             if (!v?.trim()) return 'Text cannot be empty';
             if (v.length > 200) return 'Keep it under 200 characters';
@@ -258,7 +268,7 @@ async function interactiveSetup() {
         const s = spinner();
         s.start('Generating speech...');
         try {
-          const { soundId: newSoundId } = await generateTts(textInput);
+          const { soundId: newSoundId } = await generateTts(textInput, { lang: langChoice });
           invalidateSoundCache();
           const refreshed = await listSoundsGrouped();
           soundsGrouped.custom = refreshed.grouped.custom;

@@ -15,12 +15,13 @@ claude-sound lets you create custom sounds from text using **Google Translate TT
 
 | Aspect | Notes |
 |--------|-------|
-| **Library** | [@sefinek/google-tts-api](https://www.npmjs.com/package/@sefinek/google-tts-api) |
-| **Backend** | Google Translate TTS |
+| **Implementation** | Built-in (no TTS dependency) |
+| **Backend** | Google Translate TTS (`translate_tts` endpoint) |
 | **Cost** | Free, no API key |
 | **Format** | MP3 |
 | **Storage** | `~/.claude-sound/sounds/` |
 | **Limit** | ~200 characters per phrase |
+| **Languages** | English (default), Korean |
 
 ## Requirements
 
@@ -39,14 +40,10 @@ Each file is named `<slug>-<hash>.mp3`, e.g. `hello-from-claude-1tcuau.mp3`. The
 
 ## Language
 
-The default language is English (`en`). For other languages, you’d need to change the `lang` option in `src/tts.js`:
+The default language is English (`en`). For other languages, you’d need to pass `lang` to `generateTts`:
 
 ```javascript
-const base64 = await getAudioBase64(trimmed, {
-  lang: 'en',  // e.g. 'es', 'fr', 'zh-CN'
-  slow: false,
-  timeout: 15000
-});
+await generateTts(text, { lang: 'es' });  // e.g. 'fr', 'zh-CN'
 ```
 
 Supported codes: [Google Cloud Speech docs](https://cloud.google.com/speech/docs/languages)

@@ -1,6 +1,6 @@
 {
   "name": "claude-sound",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Configure Claude Code hooks to play bundled sounds (macOS, Windows, Linux).",
   "license": "MIT",
   "homepage": "https://github.com/beefiker/claude-sound",
@@ -27,7 +27,6 @@
     "prepack": "npm run generate:sounds"
   },
   "dependencies": {
-    "@clack/prompts": "^1.0.0",
-    "@sefinek/google-tts-api": "^2.1.11"
+    "@clack/prompts": "^1.0.0"
   }
 }

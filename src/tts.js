@@ -1,9 +1,12 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import os from 'node:os';
-import { getAudioBase64 } from '@sefinek/google-tts-api';
 
 const CUSTOM_SOUNDS_DIR = path.join(os.homedir(), '.claude-sound', 'sounds');
+
+const GOOGLE_TTS_URL = 'https://translate.google.com/translate_tts';
+const USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 /**
  * Get the directory for custom TTS sounds.
@@ -41,6 +44,52 @@ function shortHash(s) {
 }
 
 /**
+ * Fetch TTS audio from Google Translate (free, no API key).
+ * Uses the undocumented translate_tts endpoint. Max ~200 chars per request.
+ * @param {string} text
+ * @param {object} [opts]
+ * @param {string} [opts.lang]
+ * @param {number} [opts.timeout]
+ * @returns {Promise<ArrayBuffer>}
+ */
+function validateLang(lang) {
+  if (typeof lang !== 'string' || lang.length < 2 || lang.length > 10) {
+    return 'en';
+  }
+  if (!/^[a-zA-Z][a-zA-Z0-9-]*$/.test(lang)) {
+    return 'en';
+  }
+  return lang;
+}
+
+async function fetchGoogleTts(text, { lang = 'en', timeout = 15000 } = {}) {
+  const safeLang = validateLang(lang);
+  const url = new URL(GOOGLE_TTS_URL);
+  url.searchParams.set('ie', 'UTF-8');
+  url.searchParams.set('tl', safeLang);
+  url.searchParams.set('client', 'tw-ob');
+  url.searchParams.set('q', text);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      throw new Error(`TTS request failed: ${res.status} ${res.statusText}`);
+    }
+
+    return await res.arrayBuffer();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Generate TTS audio from text and save to custom sounds directory.
  * Uses Google Translate TTS (free, no API key). Requires network.
  * @param {string} text - Text to speak
@@ -48,10 +97,14 @@ function shortHash(s) {
  * @param {string} [opts.lang] - Language code (default: 'en')
  * @returns {Promise<{ soundId: string; filePath: string }>}
  */
-export async function generateTts(text) {
+export async function generateTts(text, opts = {}) {
   const trimmed = text.trim();
   if (!trimmed) {
     throw new Error('Text cannot be empty');
+  }
+
+  if (trimmed.length > 200) {
+    throw new Error('Text must be 200 characters or less (Google TTS limit)');
   }
 
   const dir = customSoundsDir();
@@ -61,13 +114,12 @@ export async function generateTts(text) {
   const unique = `${baseSlug}-${shortHash(trimmed)}`;
   const filePath = path.join(dir, `${unique}.mp3`);
 
-  const base64 = await getAudioBase64(trimmed, {
-    lang: 'en',
-    slow: false,
-    timeout: 15000
+  const timeoutMs = typeof opts.timeout === 'number' && opts.timeout > 0 ? opts.timeout : 15000;
+  const arrayBuffer = await fetchGoogleTts(trimmed, {
+    lang: opts.lang ?? 'en',
+    timeout: timeoutMs
   });
-
-  const buffer = Buffer.from(base64, 'base64');
+  const buffer = Buffer.from(arrayBuffer);
   await fs.writeFile(filePath, buffer);
 
   return {

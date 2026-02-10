@@ -46,11 +46,30 @@ export async function writeJson(filePath, obj) {
 
 const MANAGED_TOKEN = '--managed-by claude-sound';
 
+/** Alphanumeric, slash, hyphen, underscore only (e.g. ring1, common/pop, custom/hello-abc123). */
+const SAFE_SOUND_ID = /^[a-zA-Z0-9/_-]+$/;
+
+/** Validate event name to prevent command injection. */
+function validateEventName(eventName) {
+  if (typeof eventName !== 'string' || !HOOK_EVENTS.includes(eventName)) {
+    throw new Error(`Invalid event name: ${JSON.stringify(eventName)}`);
+  }
+}
+
+/** Validate sound id to prevent command injection. */
+function validateSoundId(soundId) {
+  if (typeof soundId !== 'string' || !SAFE_SOUND_ID.test(soundId) || soundId.length > 120) {
+    throw new Error(`Invalid sound id: ${JSON.stringify(soundId)}`);
+  }
+}
+
 export function isManagedCommand(command) {
   return typeof command === 'string' && command.includes(MANAGED_TOKEN);
 }
 
 export function buildManagedCommand({ eventName, soundId }) {
+  validateEventName(eventName);
+  validateSoundId(soundId);
   // Use --yes to avoid prompts in hook context.
   // Keep args stable so we can parse back.
   return `npx --yes claude-sound@latest play --event ${eventName} --sound ${soundId} ${MANAGED_TOKEN}`;
@@ -68,7 +87,7 @@ export function getExistingManagedMappings(settings) {
   if (!hooks || typeof hooks !== 'object') return map;
 
   for (const [eventName, groups] of Object.entries(hooks)) {
-    if (!Array.isArray(groups)) continue;
+    if (!Array.isArray(groups) || !HOOK_EVENTS.includes(eventName)) continue;
     for (const g of groups) {
       const handlers = g?.hooks;
       if (!Array.isArray(handlers)) continue;
@@ -76,7 +95,9 @@ export function getExistingManagedMappings(settings) {
         const cmd = h?.command;
         if (isManagedCommand(cmd)) {
           const soundId = extractManagedSoundId(cmd);
-          if (soundId) map[eventName] = soundId;
+          if (soundId && SAFE_SOUND_ID.test(soundId) && soundId.length <= 120) {
+            map[eventName] = soundId;
+          }
         }
       }
     }
