@@ -1,6 +1,6 @@
 {
   "name": "claude-sound",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Configure Claude Code hooks to play bundled sounds (macOS, Windows, Linux).",
   "license": "MIT",
   "homepage": "https://github.com/beefiker/claude-sound",

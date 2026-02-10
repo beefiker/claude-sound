@@ -125,17 +125,61 @@ async function interactiveSetup() {
   /** @type {Record<string, string>} */
   let mappings = getExistingManagedMappings(settings);
 
+  // When editing project scope, load inherited mappings and their source.
+  /** @type {Record<string, string>} */
+  let inheritedMappings = {};
+  /** @type {Record<string, 'global' | 'project'>} */
+  let inheritedFrom = {};
+  if (scope === 'project' || scope === 'projectLocal') {
+    const globalPath = configPathForScope('global', projectDir);
+    const globalRes = await readJsonIfExists(globalPath);
+    if (globalRes.ok) {
+      const global = getExistingManagedMappings(globalRes.value);
+      for (const [ev, id] of Object.entries(global)) {
+        inheritedMappings[ev] = id;
+        inheritedFrom[ev] = 'global';
+      }
+    }
+    if (scope === 'projectLocal') {
+      const projectPath = configPathForScope('project', projectDir);
+      const projectRes = await readJsonIfExists(projectPath);
+      if (projectRes.ok) {
+        const project = getExistingManagedMappings(projectRes.value);
+        for (const [ev, id] of Object.entries(project)) {
+          inheritedMappings[ev] = id;
+          inheritedFrom[ev] = 'project';
+        }
+      }
+    }
+    if (Object.keys(inheritedMappings).length > 0) {
+      note(
+        'Events marked "(from global)" or "(from project)" use parent settings. Configure here to override.',
+        'Info'
+      );
+    }
+  }
+
   const { grouped: soundsGrouped, labels: soundLabels } = await listSoundsGrouped();
 
   // main loop
   while (true) {
     const options = HOOK_EVENTS.map((eventName) => {
       const soundId = mappings[eventName];
+      const inheritedSoundId = inheritedMappings[eventName];
+      const source = inheritedFrom[eventName];
       const displayName = soundId ? formatSoundDisplay(soundId, soundLabels) : '';
-      return {
-        value: eventName,
-        label: `${eventName}${soundId ? `  ${pc.dim('→')}  ${pc.cyan(displayName)}` : ''}`
-      };
+      const inheritedDisplay = inheritedSoundId
+        ? formatSoundDisplay(inheritedSoundId, soundLabels)
+        : '';
+
+      let label = eventName;
+      if (soundId) {
+        label += `  ${pc.dim('→')}  ${pc.cyan(displayName)}`;
+      } else if (inheritedSoundId) {
+        const fromLabel = source === 'project' ? '(from project)' : '(from global)';
+        label += `  ${pc.dim('→')}  ${pc.gray(inheritedDisplay)}  ${pc.dim(fromLabel)}`;
+      }
+      return { value: eventName, label };
     });
 
     options.push({ value: '__apply__', label: 'Apply (write settings)' });
@@ -143,7 +187,7 @@ async function interactiveSetup() {
     options.push({ value: '__exit__', label: 'Exit (no changes)' });
 
     const choice = await select({
-      message: `Configure hook sounds (${settingsPath})`,
+      message: `Configure hook sounds (${settingsPath})${Object.keys(inheritedMappings).length > 0 ? `  ${pc.dim('· Gray = inherited')}` : ''}`,
       options
     });
 
