@@ -5,6 +5,7 @@ import process from 'node:process';
 import fs from 'node:fs/promises';
 import { playSound } from './play.js';
 import { listSounds } from './sounds.js';
+import { selectWithSoundPreview } from './select-with-preview.js';
 import {
   HOOK_EVENTS,
   configPathForScope,
@@ -144,19 +145,12 @@ async function interactiveSetup() {
       continue;
     }
 
-    const soundId = await select({
-      message: `Pick a sound for ${eventName}`,
+    const soundId = await selectWithSoundPreview({
+      message: `Pick a sound for ${eventName} (navigate to preview)`,
       options: sounds.map((id) => ({ value: id, label: id }))
     });
 
     if (isCancel(soundId)) continue;
-
-    // quick preview
-    try {
-      await playSound(soundId);
-    } catch {
-      // ignore preview errors
-    }
 
     mappings[eventName] = soundId;
   }
