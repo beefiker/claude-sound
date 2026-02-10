@@ -5,7 +5,7 @@ import pc from 'picocolors';
 import process from 'node:process';
 import fs from 'node:fs/promises';
 import { playSound } from './play.js';
-import { listSounds } from './sounds.js';
+import { listSounds, listSoundsGrouped, ensureSoundsLoaded } from './sounds.js';
 import { selectWithSoundPreview } from './select-with-preview.js';
 import {
   HOOK_EVENTS,
@@ -28,12 +28,38 @@ function parseArg(flag) {
   return process.argv[idx + 1] ?? null;
 }
 
+/**
+ * Build flat select options with group headers from grouped sounds.
+ * @param {Record<string, string[]>} grouped
+ * @returns {Array<{ value: string; label: string; disabled?: boolean }>}
+ */
+function buildGroupedSoundOptions(grouped) {
+  const options = [];
+  const groups = [
+    ['Common', 'common'],
+    ['Game', 'game'],
+    ['Ring', 'ring']
+  ];
+  for (const [label, key] of groups) {
+    const ids = grouped[key];
+    if (!ids?.length) continue;
+    options.push({ value: `__group_${key}__`, label: pc.bold(label), disabled: true });
+    for (const id of ids) {
+      const shortName = id.includes('/') ? id.split('/')[1] : id;
+      options.push({ value: id, label: `  ${shortName}` });
+    }
+  }
+  return options;
+}
+
 async function cmdPlay() {
   const soundId = parseArg('--sound');
   if (!soundId) {
     process.stderr.write('Missing --sound <id>\n');
     process.exit(1);
   }
+
+  await ensureSoundsLoaded();
 
   try {
     await playSound(soundId);
@@ -85,7 +111,7 @@ async function interactiveSetup() {
   /** @type {Record<string, string>} */
   let mappings = getExistingManagedMappings(settings);
 
-  const sounds = await listSounds();
+  const soundsGrouped = await listSoundsGrouped();
 
   // main loop
   while (true) {
@@ -131,7 +157,7 @@ async function interactiveSetup() {
     const eventName = choice;
 
     const action = await select({
-      message: `Event: ${eventName}`,
+      message: `Event: ${eventName}  ${pc.dim('(ESC to back)')}`,
       options: [
         { value: 'enable', label: mappings[eventName] ? 'Change sound' : 'Enable & choose sound' },
         { value: 'disable', label: 'Disable (remove mapping)' },
@@ -146,12 +172,15 @@ async function interactiveSetup() {
       continue;
     }
 
+    const soundOptions = buildGroupedSoundOptions(soundsGrouped);
+
     const soundId = await selectWithSoundPreview({
-      message: `Pick a sound for ${eventName} (navigate to preview)`,
-      options: sounds.map((id) => ({ value: id, label: id }))
+      message: `Pick a sound for ${eventName} (↑/↓ preview)  ${pc.dim('(ESC to back)')}`,
+      options: soundOptions
     });
 
     if (isCancel(soundId)) continue;
+    if (typeof soundId === 'string' && soundId.startsWith('__group_')) continue;
 
     mappings[eventName] = soundId;
   }

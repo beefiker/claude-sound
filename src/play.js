@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { resolveSoundPath } from './sounds.js';
 
 /**
@@ -28,9 +28,15 @@ let _previewProcess = null;
 export function playSoundPreview(soundId) {
   stopPreview();
   const file = resolveSoundPath(soundId);
-  _previewProcess = execFile('afplay', [file], () => {
-    _previewProcess = null;
+  const proc = spawn('afplay', [file], {
+    detached: true,
+    stdio: 'ignore'
   });
+  _previewProcess = proc;
+  proc.on('exit', () => {
+    if (_previewProcess === proc) _previewProcess = null;
+  });
+  proc.unref();
 }
 
 /**
@@ -39,7 +45,16 @@ export function playSoundPreview(soundId) {
  */
 export function stopPreview() {
   if (_previewProcess) {
-    _previewProcess.kill();
+    try {
+      const pid = _previewProcess.pid;
+      if (pid != null && process.platform !== 'win32') {
+        process.kill(-pid, 'SIGKILL');
+      } else {
+        _previewProcess.kill('SIGKILL');
+      }
+    } catch {
+      // Process may already be dead
+    }
     _previewProcess = null;
   }
 }
